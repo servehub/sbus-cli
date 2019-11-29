@@ -1,0 +1,6 @@
+/bin/
+.idea/
+/vendor/
+config.yml
+*.log
+/config/reference.go

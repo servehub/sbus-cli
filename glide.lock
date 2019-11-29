@@ -1,0 +1,26 @@
+hash: da685008895edd25c12271d08a5a66a78b17dc2341e8abecab5b780a8e19fadf
+updated: 2019-11-29T18:04:52.909394+03:00
+imports:
+- name: github.com/alecthomas/template
+  version: fb15b899a75114aa79cc930e33c46b577cc664b1
+  subpackages:
+  - parse
+- name: github.com/alecthomas/units
+  version: f65c72e2690dc4b403c8bd637baf4611cd4c069b
+- name: github.com/fatih/color
+  version: 2d684516a8861da43017284349b7e303e809ac21
+- name: github.com/mattn/go-colorable
+  version: efa589957cd060542a26d2dd7832fd6a6c6c3ade
+- name: github.com/mattn/go-isatty
+  version: 6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c
+- name: github.com/streadway/amqp
+  version: edfb9018d2714e4ec54dbaba37dbfef2bdadf0e4
+- name: github.com/TylerBrock/colorjson
+  version: 95ec53f28296f47af86a81eb73f0d7fe2b23a322
+- name: golang.org/x/sys
+  version: 6c888cc515d3ed83fc103cf1d84468aad274b0a7
+  subpackages:
+  - unix
+- name: gopkg.in/alecthomas/kingpin.v2
+  version: 947dcec5ba9c011838740e680966fd7087a71d0d
+testImports: []
