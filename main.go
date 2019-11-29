@@ -17,7 +17,7 @@ var version = "1.0"
 func main() {
 	routingKey := kingpin.Arg("routing-key", "Routing key").Required().String()
 	requestBody := kingpin.Arg("request-body", "Request JSON body").Required().String()
-	envName := kingpin.Flag("env", "Environment: qa, stage, live").Default("qa").String()
+	envName := kingpin.Flag("env", "Environment: qa, stage, live").Default("local").String()
 
 	kingpin.Version(version)
 	kingpin.Parse()
@@ -91,7 +91,7 @@ func main() {
 			log.Panicf("Error parse response: %s", err)
 		}
 
-		fmt.Printf("\n %s \n\n %s \n\n", response["status"], jsonStr)
+		fmt.Printf("\n%s\n\n%s\n\n", response["status"], jsonStr)
 
 		d.Ack(false)
 		os.Exit(0)

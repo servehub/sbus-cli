@@ -10,6 +10,10 @@ build:
 	@echo "==> Build binaries..."
 	go build -v -ldflags "-s -w -X main.version=${VERSION}" -o ${DEST}/sbus${SUFFIX} main.go
 
+install: build
+	cp ${DEST}/sbus /usr/local/bin/sbus
+	chmod +x /usr/local/bin/sbus
+
 dist:
 	for GOOS in ${TARGET_OS}; do \
 		for GOARCH in ${TARGET_ARCH}; do \
