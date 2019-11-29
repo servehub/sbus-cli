@@ -1,4 +1,4 @@
-# sbus-go
+# sbus-cli
 
 ```shell script
 sbus orders.create-order '{"price":"3.141592"}'
