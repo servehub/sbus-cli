@@ -18,6 +18,7 @@ func main() {
 	routingKey := kingpin.Arg("routing-key", "Routing key").Required().String()
 	requestBody := kingpin.Arg("request-body", "Request JSON body").Required().String()
 	envName := kingpin.Flag("env", "Environment: qa, stage, live").Default("local").String()
+	isEvent := kingpin.Flag("event", "Is it event?").Default("false").Bool()
 
 	kingpin.Version(version)
 	kingpin.Parse()
@@ -38,7 +39,7 @@ func main() {
 		log.Panicf("Channel: %s", err)
 	}
 
-	queue, err := channel.QueueDeclare(
+	replyQueue, err := channel.QueueDeclare(
 		"",    // name of the queue
 		false, // durable
 		true,  // delete when unused
@@ -51,8 +52,8 @@ func main() {
 	}
 
 	deliveries, err := channel.Consume(
-		queue.Name, // name
-		"sbus-cli", // consumerTag,
+		replyQueue.Name, // name
+		"",         // consumerTag,
 		false,      // noAck
 		false,      // exclusive
 		false,      // noLocal
@@ -63,8 +64,16 @@ func main() {
 		log.Panicf("Queue Consume: %s", err)
 	}
 
+	exchange := "sbus.common"
+	replyTo := replyQueue.Name
+
+	if *isEvent {
+		exchange = "sbus.events"
+		replyTo = ""
+	}
+
 	if err = channel.Publish(
-		"sbus.common", // publish to an exchange
+		exchange, // publish to an exchange
 		*routingKey,   // routing to 0 or more queues
 		false,         // mandatory
 		false,         // immediate
@@ -73,27 +82,29 @@ func main() {
 			Body:         []byte(`{"body":` + *requestBody + `}`),
 			DeliveryMode: amqp.Transient, // 1=non-persistent, 2=persistent
 			Priority:     0,              // 0-9
-			ReplyTo:      queue.Name,
+			ReplyTo:      replyTo,
 		},
 	); err != nil {
 		log.Panicf("Exchange Publish: %s", err)
 	}
 
-	for d := range deliveries {
-		var response map[string]interface{}
-		json.Unmarshal(d.Body, &response)
+	if !*isEvent {
+		for d := range deliveries {
+			var response map[string]interface{}
+			json.Unmarshal(d.Body, &response)
 
-		f := colorjson.NewFormatter()
-		f.Indent = 2
+			f := colorjson.NewFormatter()
+			f.Indent = 2
 
-		jsonStr, err := f.Marshal(response["body"])
-		if err != nil {
-			log.Panicf("Error parse response: %s", err)
+			jsonStr, err := f.Marshal(response["body"])
+			if err != nil {
+				log.Panicf("Error parse response: %s", err)
+			}
+
+			fmt.Printf("\n%s\n\n%s\n\n", response["status"], jsonStr)
+
+			d.Ack(false)
+			os.Exit(0)
 		}
-
-		fmt.Printf("\n%s\n\n%s\n\n", response["status"], jsonStr)
-
-		d.Ack(false)
-		os.Exit(0)
 	}
 }
