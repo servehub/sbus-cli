@@ -8,6 +8,10 @@ sbus orders.create-order '{"price":"3.141592"}'
 sbus orders.create-order '{"price":"3.141592"}' --env=qa
 ```
 
+```shell script
+sbus orders.order-updated '{"orderId":"123"}' --env=qa --event
+```
+
 
 Configure access to env specific rabbitmq:
 
