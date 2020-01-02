@@ -40,7 +40,7 @@ release: dist
 				--user servehub \
 				--repo sbus-cli \
 				--tag v${VERSION} \
-				--name secret-man-v${VERSION}-$$GOOS-$$GOARCH \
+				--name sbus-v${VERSION}-$$GOOS-$$GOARCH \
 				--file ${DEST}/sbus-v${VERSION}-$$GOOS-$$GOARCH \
 				--replace; \
 		done \
