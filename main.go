@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"strings"
+	"math/rand"
+	"time"
 
 	"github.com/TylerBrock/colorjson"
 	"github.com/streadway/amqp"
@@ -72,13 +74,17 @@ func main() {
 		replyTo = ""
 	}
 
+  rand.Seed(time.Now().UnixNano())
+
 	if err = channel.Publish(
 		exchange, // publish to an exchange
 		*routingKey,   // routing to 0 or more queues
 		false,         // mandatory
 		false,         // immediate
 		amqp.Publishing{
-			Headers:      amqp.Table{},
+			Headers:      amqp.Table{
+				"correlation-id": randString(32),
+			},
 			Body:         []byte(`{"body":` + *requestBody + `}`),
 			DeliveryMode: amqp.Transient, // 1=non-persistent, 2=persistent
 			Priority:     0,              // 0-9
@@ -107,4 +113,14 @@ func main() {
 			os.Exit(0)
 		}
 	}
+}
+
+var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+
+func randString(n int) string {
+    b := make([]rune, n)
+    for i := range b {
+        b[i] = letters[rand.Intn(len(letters))]
+    }
+    return string(b)
 }

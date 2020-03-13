@@ -11,7 +11,7 @@ build:
 	go build -v -ldflags "-s -w -X main.version=${VERSION}" -o ${DEST}/sbus${SUFFIX} main.go
 
 install: build
-	cp ${DEST}/sbus /usr/local/bin/sbus
+	cp -f ${DEST}/sbus /usr/local/bin/sbus
 	chmod +x /usr/local/bin/sbus
 
 dist:
