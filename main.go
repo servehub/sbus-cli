@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	strconv "strconv"
 	"strings"
 	"math/rand"
 	"time"
@@ -110,7 +111,12 @@ func main() {
 			fmt.Printf("\n%s\n\n%s\n\n", response["status"], jsonStr)
 
 			d.Ack(false)
-			os.Exit(0)
+
+			if status, err2 := strconv.Atoi(fmt.Sprintf("%s", response["status"])); err2 != nil || status >= 400 {
+				os.Exit(2)
+			} else {
+				os.Exit(0)
+			}
 		}
 	}
 }
