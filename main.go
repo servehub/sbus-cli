@@ -10,6 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"crypto/ed25519"
+	"encoding/base64"
+	"encoding/hex"
+
 	"github.com/TylerBrock/colorjson"
 	"github.com/streadway/amqp"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -26,7 +30,16 @@ func main() {
 	kingpin.Version(version)
 	kingpin.Parse()
 
-	amqpUrl, ok := os.LookupEnv("SBUS_AMQP_"+ strings.ToUpper(*envName) +"_URL")
+	if *routingKey == "new-user" {
+		pubKey, privKey, _ := ed25519.GenerateKey(nil)
+
+		println(*requestBody)
+		println("pub:", hex.EncodeToString(pubKey))
+		println("priv:", hex.EncodeToString(privKey.Seed()))
+		return
+	}
+
+	amqpUrl, ok := os.LookupEnv("SBUS_AMQP_" + strings.ToUpper(*envName) + "_URL")
 	if !ok {
 		amqpUrl = "amqp://guest:guest@localhost:5672/"
 	}
@@ -56,12 +69,12 @@ func main() {
 
 	deliveries, err := channel.Consume(
 		replyQueue.Name, // name
-		"",         // consumerTag,
-		false,      // noAck
-		false,      // exclusive
-		false,      // noLocal
-		false,      // noWait
-		nil,        // arguments
+		"",              // consumerTag,
+		false,           // noAck
+		false,           // exclusive
+		false,           // noLocal
+		false,           // noWait
+		nil,             // arguments
 	)
 	if err != nil {
 		log.Panicf("Queue Consume: %s", err)
@@ -75,18 +88,35 @@ func main() {
 		replyTo = ""
 	}
 
-  rand.Seed(time.Now().UnixNano())
+	rand.Seed(time.Now().UnixNano())
+
+	payload := []byte(`{"body":` + *requestBody + `}`)
+
+	headers := amqp.Table{
+		"correlation-id": randString(32),
+	}
+
+	if privateKeyHex, ok := os.LookupEnv("SBUS_PRIVATE_KEY"); ok {
+		if privateKey, err := hex.DecodeString(privateKeyHex); err == nil {
+			pvk := ed25519.NewKeyFromSeed(privateKey)
+			sigb := ed25519.Sign(pvk, payload)
+
+			if user, ok := os.LookupEnv("SBUS_USER"); ok {
+				headers["origin"] = user
+			}
+
+			headers["signature"] = base64.URLEncoding.EncodeToString(sigb)
+		}
+	}
 
 	if err = channel.Publish(
-		exchange, // publish to an exchange
-		*routingKey,   // routing to 0 or more queues
-		false,         // mandatory
-		false,         // immediate
+		exchange,    // publish to an exchange
+		*routingKey, // routing to 0 or more queues
+		false,       // mandatory
+		false,       // immediate
 		amqp.Publishing{
-			Headers:      amqp.Table{
-				"correlation-id": randString(32),
-			},
-			Body:         []byte(`{"body":` + *requestBody + `}`),
+			Headers:      headers,
+			Body:         payload,
 			DeliveryMode: amqp.Transient, // 1=non-persistent, 2=persistent
 			Priority:     0,              // 0-9
 			ReplyTo:      replyTo,
@@ -124,9 +154,9 @@ func main() {
 var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 
 func randString(n int) string {
-    b := make([]rune, n)
-    for i := range b {
-        b[i] = letters[rand.Intn(len(letters))]
-    }
-    return string(b)
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }
