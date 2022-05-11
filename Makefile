@@ -11,8 +11,7 @@ build:
 	go build -v -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o ${DEST}/sbus${SUFFIX} main.go
 
 install: build
-	cp -f ${DEST}/sbus /usr/local/bin/sbus
-	chmod +x /usr/local/bin/sbus
+	cp -f ${DEST}/sbus ${GOPATH}/bin/sbus
 
 dist:
 	for GOOS in ${TARGET_OS}; do \
@@ -33,6 +32,8 @@ release: dist
 		--user servehub \
 		--repo sbus-cli \
 		--tag v${VERSION}
+
+	sleep 5
 
 	for GOOS in ${TARGET_OS}; do \
 		for GOARCH in ${TARGET_ARCH}; do \

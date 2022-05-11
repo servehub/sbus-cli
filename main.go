@@ -94,7 +94,7 @@ func main() {
 
 	headers := amqp.Table{
 		"correlation-id": randString(32),
-		"expired-at":     time.Now().Add(time.Minute * 5).Unix(),
+		"expired-at":     time.Now().Add(time.Minute * 5).UnixMilli(),
 	}
 
 	if privateKeyHex, ok := os.LookupEnv("SBUS_PRIVATE_KEY"); ok {
