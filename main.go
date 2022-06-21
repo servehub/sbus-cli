@@ -22,7 +22,7 @@ import (
 
 var (
 	version = "1.0"
-	app     = kingpin.New("sbus", "A command-line interface to sbus.")
+	app     = kingpin.New("sbus", "A command-line interface to sbus.").Version(version)
 	envName = app.Flag("env", "Environment: qa, stage, live").Default("local").String()
 
 	register       = app.Command("register", "Register a new user.")
