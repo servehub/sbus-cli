@@ -4,3 +4,4 @@
 config.yml
 *.log
 /config/reference.go
+.vscode/
