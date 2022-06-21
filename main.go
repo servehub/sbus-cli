@@ -114,25 +114,31 @@ func main() {
 			replyTo = ""
 		}
 
-		rand.Seed(time.Now().UnixNano())
+		now := time.Now()
+
+		rand.Seed(now.UnixNano())
 
 		payload := []byte(`{"body":` + *requestBody + `}`)
 
 		headers := amqp.Table{
 			"correlation-id": RandString(32),
-			"expired-at":     time.Now().Add(time.Minute * 5).UnixMilli(),
+			"expired-at":     now.Add(time.Minute * 5).UnixMilli(),
+			"timestamp":      now.UnixMilli(),
 		}
 
 		if privateKeyHex, ok := os.LookupEnv("SBUS_" + strings.ToUpper(*envName) + "_PRIVATE_KEY"); ok {
 			if privateKey, err := hex.DecodeString(privateKeyHex); err == nil {
 				pvk := ed25519.NewKeyFromSeed(privateKey)
-				sigb := ed25519.Sign(pvk, payload)
+				timestampS := strconv.FormatInt(now.UnixMilli(), 10)
+				timestampB := []byte(timestampS)
+				sigb := ed25519.Sign(pvk, append(payload, timestampB...))
+				sigs := base64.URLEncoding.EncodeToString(sigb)
 
 				if user, ok := os.LookupEnv("SBUS_USER"); ok {
 					headers["origin"] = user
 				}
 
-				headers["signature"] = base64.URLEncoding.EncodeToString(sigb)
+				headers["signature"] = sigs
 			}
 		}
 
