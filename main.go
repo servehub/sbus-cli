@@ -50,17 +50,17 @@ func main() {
 	case register.FullCommand():
 		pubKey, privKey, _ := ed25519.GenerateKey(nil)
 
-		hexEncodedPublicKEy := hex.EncodeToString(pubKey)
+		hexEncodedPublicKey := hex.EncodeToString(pubKey)
 
 		userKey := "users/" + *registerName
 
 		if *consul {
-			ConfigureUserInConsul(hexEncodedPublicKEy, userKey)
+			ConfigureUserInConsul(hexEncodedPublicKey, userKey)
 		}
 
 		println("add to env SBUS_USER=" + userKey)
 		println("add to env SBUS_" + strings.ToUpper(*envName) + "_PRIVATE_KEY=" + hex.EncodeToString(privKey.Seed()))
-		println("add to env SBUS_" + strings.ToUpper(*envName) + "_PUBLIC_KEY=" + hexEncodedPublicKEy)
+		println("add to env SBUS_" + strings.ToUpper(*envName) + "_PUBLIC_KEY=" + hexEncodedPublicKey)
 		return
 
 	// Post message
@@ -179,7 +179,7 @@ func main() {
 	}
 }
 
-func ConfigureUserInConsul(hexEncodedPublicKEy string, userKey string) {
+func ConfigureUserInConsul(hexEncodedPublicKey string, userKey string) {
 	if *envName == "local" {
 		log.Printf("Consul cannot be configured for %s", *envName)
 		return
@@ -203,7 +203,7 @@ func ConfigureUserInConsul(hexEncodedPublicKEy string, userKey string) {
 
 	writeOptions := api.WriteOptions{}
 
-	publicKey := ConsulPublicKey{PublicKey: hexEncodedPublicKEy}
+	publicKey := ConsulPublicKey{PublicKey: hexEncodedPublicKey}
 
 	marshal, err := json.Marshal(publicKey)
 	if err != nil {
