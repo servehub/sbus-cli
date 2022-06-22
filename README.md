@@ -38,13 +38,13 @@ sbus send orders.create-order '{"price":"3.141592"}'
 ```
 
 ```shell script
-sbus send orders.create-order '{"price":"3.141592"}' --env=qa
+sbus --env=qa send orders.create-order '{"price":"3.141592"}'
 ```
 
 ```shell script
-sbus send orders.order-updated '{"orderId":"123"}' --env=qa --event
+sbus --env=qa send --event orders.order-updated '{"orderId":"123"}'
 ```
 
 ```shell script
-sbus register --save-consul --group=devs --group=support joe.bloggs
+sbus --env=qa register --save-consul --group=devs --group=support joe.bloggs
 ```
