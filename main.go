@@ -198,7 +198,7 @@ func ConfigureUserInConsul(hexEncodedPublicKey string, userKey string) {
 
 	consulDatacenter, ok := os.LookupEnv("SBUS_CONSUL_" + strings.ToUpper(*envName) + "_DC")
 	if !ok {
-		log.Panicf("Consul datacenter not configured for %s", *envName)
+		consulDatacenter = "dc1"
 	}
 
 	config := api.DefaultConfig()
