@@ -3,3 +3,4 @@ import:
   - package: github.com/streadway/amqp
   - package: gopkg.in/alecthomas/kingpin.v2
   - package: github.com/TylerBrock/colorjson
+  - package: github.com/hashicorp/consul/api

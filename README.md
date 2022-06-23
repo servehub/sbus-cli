@@ -46,5 +46,5 @@ sbus --env=qa send --event orders.order-updated '{"orderId":"123"}'
 ```
 
 ```shell script
-sbus --env=qa register --save-consul --group=devs --group=support joe.bloggs
+sbus --env=qa register --save-consul --group=devs --group=support users/joe.bloggs
 ```

@@ -52,13 +52,11 @@ func main() {
 
 		hexEncodedPublicKey := hex.EncodeToString(pubKey)
 
-		userKey := "users/" + *registerName
-
 		if *consul {
-			ConfigureUserInConsul(hexEncodedPublicKey, userKey)
+			ConfigureUserInConsul(hexEncodedPublicKey, *registerName)
 		}
 
-		println("add to env SBUS_USER=" + userKey)
+		println("add to env SBUS_USER=" + *registerName)
 		println("add to env SBUS_" + strings.ToUpper(*envName) + "_PRIVATE_KEY=" + hex.EncodeToString(privKey.Seed()))
 		println("add to env SBUS_" + strings.ToUpper(*envName) + "_PUBLIC_KEY=" + hexEncodedPublicKey)
 		return
@@ -216,8 +214,10 @@ func ConfigureUserInConsul(hexEncodedPublicKey string, userKey string) {
 		log.Panicf("Couldn't serialise publicKey to json: %s", err)
 	}
 
+	userPublicKeyKey := *publicKeyPath + userKey
+
 	publicKeyKVPair := api.KVPair{
-		Key:   *publicKeyPath + userKey,
+		Key:   userPublicKeyKey,
 		Value: marshal,
 	}
 
