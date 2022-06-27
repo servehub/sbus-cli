@@ -33,7 +33,7 @@ var (
 	groups         = register.Flag("group", "Group for user.").Strings()
 	registerName   = register.Arg("name", "Name of user.").Required().String()
 
-	send        = app.Command("send", "Send a message to the service bus.")
+	send        = app.Command("send", "Send a message to the service bus.").Default()
 	isEvent     = send.Flag("event", "Is it event?").Default("false").Bool()
 	routingKey  = send.Arg("routing-key", "Routing key").Required().String()
 	requestBody = send.Arg("request-body", "Request JSON body").Required().String()
