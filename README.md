@@ -44,8 +44,8 @@ sbus --env=qa orders.create-order '{"price":"3.141592"}'
 ```
 
 ```shell script
-sbus --env=qa send --event orders.order-updated '{"orderId":"123"}'
-sbus --env=qa --event orders.order-updated '{"orderId":"123"}'
+sbus --env=qa send orders.order-updated '{"orderId":"123"}' --event 
+sbus --env=qa orders.order-updated '{"orderId":"123"}' --event 
 ```
 
 ```shell script
