@@ -35,16 +35,27 @@ export SBUS_CONSUL_LIVE_DC="live1"
 
 ```shell script
 sbus send orders.create-order '{"price":"3.141592"}'
+sbus orders.create-order '{"price":"3.141592"}'
 ```
 
 ```shell script
 sbus --env=qa send orders.create-order '{"price":"3.141592"}'
+sbus --env=qa orders.create-order '{"price":"3.141592"}'
 ```
 
 ```shell script
 sbus --env=qa send --event orders.order-updated '{"orderId":"123"}'
+sbus --env=qa --event orders.order-updated '{"orderId":"123"}'
 ```
 
 ```shell script
 sbus --env=qa register --save-consul --group=devs --group=support users/joe.bloggs
+```
+
+```shell
+sbus --env=qa verify WC_udKNSxhBqS7hcYE89RlIKN0RqZejK1QZrzviSlgCD0ijlz8MK4w8gtQe4XGEmWVfNECOwF1xLFMsNrYWPCw== my/service '{}' 1656322991130
+```
+
+```shell
+sbus --help
 ```
