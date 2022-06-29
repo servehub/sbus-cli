@@ -37,13 +37,6 @@ var (
 	isEvent     = send.Flag("event", "Is it event?").Default("false").Bool()
 	routingKey  = send.Arg("routing-key", "Routing key").Required().String()
 	requestBody = send.Arg("request-body", "Request JSON body").Required().String()
-
-	verify       = app.Command("verify", "Verify a message signature.")
-	verifyPKPath = verify.Flag("public-key-path", "Where the public keys are on consul").Default("services/keys/public/").String()
-	signature    = verify.Arg("signature", "Signature").Required().String()
-	caller       = verify.Arg("caller", "Who sent the message").Required().String()
-	body         = verify.Arg("body", "Message body").Required().String()
-	timestamp    = verify.Arg("timestamp", "Timestamp").String()
 )
 
 type ConsulPublicKey struct {
@@ -63,46 +56,7 @@ func main() {
 	case send.FullCommand():
 		sendMessage()
 		return
-
-	case verify.FullCommand():
-		verifySignature()
-		return
 	}
-}
-
-func verifySignature() {
-	client := newConsulClient()
-
-	callerPublicKeyKey := *verifyPKPath + *caller
-
-	queryOptions := api.QueryOptions{}
-
-	get, _, err := client.KV().Get(callerPublicKeyKey, &queryOptions)
-	if err != nil {
-		log.Panicf("Public Key: %s", err)
-	}
-
-	var pkc ConsulPublicKey
-	err = json.Unmarshal(get.Value, &pkc)
-	if err != nil {
-		log.Panicf("Public Key: %s", err)
-	}
-
-	pk, err := hex.DecodeString(pkc.PublicKey)
-	if err != nil {
-		log.Panicf("Public Key: %s", err)
-	}
-
-	sigb, err := base64.URLEncoding.DecodeString(*signature)
-	if err != nil {
-		log.Panicf("Signature Key: %s", err)
-	}
-
-	payload := append([]byte(*body), []byte(*timestamp)...)
-
-	verified := ed25519.Verify(pk, payload, sigb)
-
-	println("Verified?: ", verified)
 }
 
 func registerUser() {
@@ -120,6 +74,8 @@ func registerUser() {
 }
 
 func sendMessage() {
+	log.Printf(*envName)
+
 	amqpUrl, ok := os.LookupEnv("SBUS_AMQP_" + strings.ToUpper(*envName) + "_URL")
 	if !ok {
 		amqpUrl = "amqp://guest:guest@localhost:5672/"
@@ -175,8 +131,10 @@ func sendMessage() {
 
 	payload := []byte(`{"body":` + *requestBody + `}`)
 
+	corrId := randString(32)
+
 	headers := amqp.Table{
-		"correlation-id": randString(32),
+		"correlation-id": corrId,
 		"expired-at":     now.Add(time.Minute * 5).UnixMilli(),
 		"timestamp":      now.UnixMilli(),
 	}
@@ -186,14 +144,22 @@ func sendMessage() {
 			pvk := ed25519.NewKeyFromSeed(privateKey)
 			timestampS := strconv.FormatInt(now.UnixMilli(), 10)
 			timestampB := []byte(timestampS)
-			sigb := ed25519.Sign(pvk, append(payload, timestampB...))
-			sigs := base64.URLEncoding.EncodeToString(sigb)
+			routingKeyB := []byte(*routingKey)
+			corrIdB := []byte(corrId)
+			messageSigB := ed25519.Sign(pvk, append(append(append(payload, timestampB...), routingKeyB...), corrIdB...))
+			messageSigS := base64.URLEncoding.EncodeToString(messageSigB)
 
 			if user, ok := os.LookupEnv("SBUS_USER"); ok {
+				headers["message-origin"] = user
 				headers["origin"] = user
+
+				cmdSigB := ed25519.Sign(pvk, append(append([]byte(*requestBody), routingKeyB...), []byte(user)...))
+				cmdSigS := base64.URLEncoding.EncodeToString(cmdSigB)
+
+				headers["signature"] = cmdSigS
 			}
 
-			headers["signature"] = sigs
+			headers["message-signature"] = messageSigS
 		}
 	}
 
