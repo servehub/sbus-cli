@@ -74,8 +74,6 @@ func registerUser() {
 }
 
 func sendMessage() {
-	log.Printf(*envName)
-
 	amqpUrl, ok := os.LookupEnv("SBUS_AMQP_" + strings.ToUpper(*envName) + "_URL")
 	if !ok {
 		amqpUrl = "amqp://guest:guest@localhost:5672/"
