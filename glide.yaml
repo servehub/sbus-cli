@@ -1,5 +1,0 @@
-package: github.com/servehub/sbus-cli
-import:
-  - package: github.com/streadway/amqp
-  - package: gopkg.in/alecthomas/kingpin.v2
-  - package: github.com/TylerBrock/colorjson
