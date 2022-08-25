@@ -140,24 +140,16 @@ func sendMessage() {
 	if privateKeyHex, ok := os.LookupEnv("SBUS_" + strings.ToUpper(*envName) + "_PRIVATE_KEY"); ok {
 		if privateKey, err := hex.DecodeString(privateKeyHex); err == nil {
 			pvk := ed25519.NewKeyFromSeed(privateKey)
-			timestampS := strconv.FormatInt(now.UnixMilli(), 10)
-			timestampB := []byte(timestampS)
 			routingKeyB := []byte(*routingKey)
-			corrIdB := []byte(corrId)
-			messageSigB := ed25519.Sign(pvk, append(append(append(payload, timestampB...), routingKeyB...), corrIdB...))
-			messageSigS := base64.URLEncoding.EncodeToString(messageSigB)
 
 			if user, ok := os.LookupEnv("SBUS_USER"); ok {
-				headers["message-origin"] = user
 				headers["origin"] = user
 
-				cmdSigB := ed25519.Sign(pvk, append(append([]byte(*requestBody), routingKeyB...), []byte(user)...))
+				cmdSigB := ed25519.Sign(pvk, append(append(payload, routingKeyB...), []byte(user)...))
 				cmdSigS := base64.URLEncoding.EncodeToString(cmdSigB)
 
 				headers["signature"] = cmdSigS
 			}
-
-			headers["message-signature"] = messageSigS
 		}
 	}
 
