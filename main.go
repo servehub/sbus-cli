@@ -27,16 +27,16 @@ var (
 	envName = app.Flag("env", "Environment: qa, stage, live").Default("local").String()
 
 	register       = app.Command("register", "Register a new user.")
-	consul         = register.Flag("save-consul", "Save user to consul?").Default("false").Bool()
+	registerName   = register.Arg("name", "Name of user.").Required().String()
+	groups         = register.Flag("group", "Group for user.").Strings()
+	consulUrl      = register.Flag("save-to-consul", "Save user to consul?").Default("").String()
 	registerPKPath = register.Flag("public-key-path", "Where the public keys are on consul").Default("services/keys/public/").String()
 	identitiesPath = register.Flag("identities-path", "Where the identities are on consul").Default("sbus/rbac/identities/").String()
-	groups         = register.Flag("group", "Group for user.").Strings()
-	registerName   = register.Arg("name", "Name of user.").Required().String()
 
 	send        = app.Command("send", "Send a message to the service bus.").Default()
-	isEvent     = send.Flag("event", "Is it event?").Default("false").Bool()
 	routingKey  = send.Arg("routing-key", "Routing key").Required().String()
 	requestBody = send.Arg("request-body", "Request JSON body").Required().String()
+	isEvent     = send.Flag("event", "Is it event?").Default("false").Bool()
 )
 
 type ConsulPublicKey struct {
@@ -64,13 +64,13 @@ func registerUser() {
 
 	hexEncodedPublicKey := hex.EncodeToString(pubKey)
 
-	if *consul {
+	if *consulUrl != "" {
 		configureUserInConsul(hexEncodedPublicKey, *registerName)
 	}
 
-	println("add to env SBUS_USER=" + *registerName)
-	println("add to env SBUS_" + strings.ToUpper(*envName) + "_PRIVATE_KEY=" + hex.EncodeToString(privKey.Seed()))
-	println("add to env SBUS_" + strings.ToUpper(*envName) + "_PUBLIC_KEY=" + hexEncodedPublicKey)
+	println("export SBUS_USER='" + *registerName + "'")
+	println("export SBUS_" + strings.ToUpper(*envName) + "_PRIVATE_KEY=" + hex.EncodeToString(privKey.Seed()))
+	println("export SBUS_" + strings.ToUpper(*envName) + "_PUBLIC_KEY=" + hexEncodedPublicKey)
 }
 
 func sendMessage() {
@@ -241,19 +241,8 @@ func configureUserInConsul(hexEncodedPublicKey string, userKey string) {
 }
 
 func newConsulClient() *api.Client {
-	consulUrl, ok := os.LookupEnv("SBUS_CONSUL_" + strings.ToUpper(*envName) + "_URL")
-	if !ok {
-		log.Panicf("Consul not configured for %s", *envName)
-	}
-
-	consulDatacenter, ok := os.LookupEnv("SBUS_CONSUL_" + strings.ToUpper(*envName) + "_DC")
-	if !ok {
-		consulDatacenter = "dc1"
-	}
-
 	config := api.DefaultConfig()
-	config.Address = consulUrl
-	config.Datacenter = consulDatacenter
+	config.Address = *consulUrl
 
 	client, _ := api.NewClient(config)
 	return client

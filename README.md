@@ -16,19 +16,9 @@ export SBUS_AMQP_QA_URL="amqp://guest:guest@rabbit.qa.example.com:5672/"
 export SBUS_AMQP_STAGE_URL="amqp://guest:guest@rabbit.stage.example.com:5672/"
 export SBUS_AMQP_LIVE_URL="amqp://guest:guest@rabbit.live.example.com:5672/"
 
-export SBUS_USER=users/joe.bloggs  
-
-export SBUS_QA_PRIVATE_KEY=... 
-export SBUS_STAGE_PRIVATE_KEY=... 
-export SBUS_LIVE_PRIVATE_KEY=... 
-
-export SBUS_CONSUL_QA_URL="https://consul.qa.example.com" 
-export SBUS_CONSUL_STAGE_URL="https://consul.stage.example.com" 
-export SBUS_CONSUL_LIVE_URL="https://consul.live.example.com" 
-
-export SBUS_CONSUL_QA_DC="qa1" 
-export SBUS_CONSUL_STAGE_DC="stage1" 
-export SBUS_CONSUL_LIVE_DC="live1" 
+export SBUS_USER='users/joe.smith'
+export SBUS_QA_PUBLIC_KEY=db41b9d8d231f***88f5fa007ce5 
+export SBUS_QA_PRIVATE_KEY=daf163359fb9***8863642af8029f5fa007ce5
 ```
 
 ### Usage
@@ -46,7 +36,7 @@ sbus orders.order-updated '{"orderId":"123"}' --env=qa --event
 ```
 
 ```shell script
-sbus register users/joe.bloggs --save-consul --group=devs --group=support --env=qa
+sbus register users/joe.smith --save-to-consul="consul.qa.example.co" --group=devs --group=support --group=leads --env=qa
 ```
 
 ```shell
