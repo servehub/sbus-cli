@@ -11,6 +11,7 @@ build:
 	go build -v -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o ${DEST}/sbus${SUFFIX} main.go
 
 install: build
+	rm ${GOPATH}/bin/sbus
 	cp -f ${DEST}/sbus ${GOPATH}/bin/sbus
 
 dist:
