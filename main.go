@@ -43,6 +43,10 @@ type ConsulPublicKey struct {
 	PublicKey string `json:"publicKey"`
 }
 
+type Identity struct {
+	Groups []string `json:"groups"`
+}
+
 func main() {
 	kingpin.Version(version)
 
@@ -224,9 +228,11 @@ func configureUserInConsul(hexEncodedPublicKey string, userKey string) {
 		log.Panicf("Consul Public Key Put: %s", err)
 	}
 
-	marshal, err = json.Marshal(*groups)
+	identity := Identity{Groups: *groups}
+
+	marshal, err = json.Marshal(identity)
 	if err != nil {
-		log.Panicf("Couldn't serialise groups to json: %s", err)
+		log.Panicf("Couldn't serialise identity to json: %s", err)
 	}
 
 	identityKeyPair := api.KVPair{
