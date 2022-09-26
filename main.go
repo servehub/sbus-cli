@@ -31,7 +31,7 @@ var (
 	groups         = register.Flag("group", "Group for user.").Strings()
 	consulUrl      = register.Flag("save-to-consul", "Save user to consul?").Default("").String()
 	registerPKPath = register.Flag("public-key-path", "Where the public keys are on consul").Default("services/keys/public/").String()
-	identitiesPath = register.Flag("identities-path", "Where the identities are on consul").Default("sbus/rbac/identities/").String()
+	identitiesPath = register.Flag("identities-path", "Where the identities are on consul").Default("services/sbus/identities/").String()
 
 	send        = app.Command("send", "Send a message to the service bus.").Default()
 	routingKey  = send.Arg("routing-key", "Routing key").Required().String()
