@@ -16,6 +16,7 @@ import (
 
 	"github.com/TylerBrock/colorjson"
 	"github.com/hashicorp/consul/api"
+	"github.com/servehub/sbus-cli/internal/config"
 	"github.com/streadway/amqp"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -37,6 +38,9 @@ var (
 	routingKey  = send.Arg("routing-key", "Routing key").Required().String()
 	requestBody = send.Arg("request-body", "Request JSON body").Required().String()
 	isEvent     = send.Flag("event", "Is it event?").Default("false").Bool()
+
+	fetchConfig = app.Command("config", "Read ampq url key from AWS Secret Manager and save to config file.")
+	smKey       = fetchConfig.Flag("sm-key", "Exact AWS Secret Manager key name.").Default("").String()
 )
 
 type ConsulPublicKey struct {
@@ -48,6 +52,7 @@ type Identity struct {
 }
 
 func main() {
+
 	kingpin.Version(version)
 
 	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
@@ -58,9 +63,34 @@ func main() {
 
 	// Post message
 	case send.FullCommand():
-		sendMessage()
+		fixDashInEnv := strings.ReplaceAll(*envName, "-", "_")
+		envData, _ := config.LoadConfigWithOverrides(&fixDashInEnv)
+		sendMessage(envData)
 		return
+
+	case fetchConfig.FullCommand():
+
+		envData, _ := config.LoadConfigNoOverrides(envName)
+		url, err := readConfigFromAWS()
+		if err != nil {
+			fmt.Println("Error:", err.Error()) //TODO
+		} else {
+			envData.SetValueAmpqUrl(envName, url)
+			envData.SaveConfiguration()
+		}
 	}
+
+}
+func readConfigFromAWS() (*string, error) {
+	if len(*envName) == 0 {
+		return nil, fmt.Errorf("--env flag must be provided")
+	}
+
+	ampqUrl, err := config.FetchDataFromAWSSM(smKey, envName)
+	if err != nil {
+		return nil, err
+	}
+	return ampqUrl, nil
 }
 
 func registerUser() {
@@ -77,8 +107,8 @@ func registerUser() {
 	println("export SBUS_" + strings.ToUpper(*envName) + "_PUBLIC_KEY=" + hexEncodedPublicKey)
 }
 
-func sendMessage() {
-	amqpUrl, ok := os.LookupEnv("SBUS_AMQP_" + strings.ToUpper(*envName) + "_URL")
+func sendMessage(envData *config.AppConfig) {
+	amqpUrl, ok := envData.GetValue(envName, config.EnvSbusAmqpUrl)
 	if !ok {
 		amqpUrl = "amqp://guest:guest@localhost:5672/"
 	}
@@ -141,12 +171,14 @@ func sendMessage() {
 		"timestamp":      now.UnixMilli(),
 	}
 
-	if privateKeyHex, ok := os.LookupEnv("SBUS_" + strings.ToUpper(*envName) + "_PRIVATE_KEY"); ok {
+	//if privateKeyHex, ok := os.LookupEnv("SBUS_" + strings.ToUpper(*envName) + "_PRIVATE_KEY"); ok {
+	if privateKeyHex, ok := envData.GetValue(envName, config.EnvSbusPrivateKey); ok {
 		if privateKey, err := hex.DecodeString(privateKeyHex); err == nil {
 			pvk := ed25519.NewKeyFromSeed(privateKey)
 			routingKeyB := []byte(*routingKey)
 
-			if user, ok := os.LookupEnv("SBUS_USER"); ok {
+			//if user, ok := os.LookupEnv("SBUS_USER"); ok {
+			if user, ok := envData.GetValue(envName, config.EnvSbusUser); ok {
 				headers["origin"] = user
 
 				cmdSigB := ed25519.Sign(pvk, append(append(payload, routingKeyB...), []byte(user)...))
