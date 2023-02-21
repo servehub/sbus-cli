@@ -36,7 +36,7 @@ var (
 	send              = app.Command("send", "Send a message to the service bus.").Default()
 	routingKey        = send.Arg("routing-key", "Routing key").Required().String()
 	requestBody       = send.Arg("request-body", "Request JSON body/JSON file").Required().String()
-	readyBodyFromFile = send.Flag("file", "Request request-body is a file").Default("false").Bool()
+	readyBodyFromFile = send.Flag("file", "request-body parameter is a file").Default("false").Bool()
 	noStatusCode      = send.Flag("no-status", "Exclude status code from response.").Default("false").Bool()
 	isEvent           = send.Flag("event", "Is it event?").Default("false").Bool()
 )
