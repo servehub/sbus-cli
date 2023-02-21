@@ -33,10 +33,12 @@ var (
 	registerPKPath = register.Flag("public-key-path", "Where the public keys are on consul").Default("services/keys/public/").String()
 	identitiesPath = register.Flag("identities-path", "Where the identities are on consul").Default("services/sbus/identities/").String()
 
-	send        = app.Command("send", "Send a message to the service bus.").Default()
-	routingKey  = send.Arg("routing-key", "Routing key").Required().String()
-	requestBody = send.Arg("request-body", "Request JSON body").Required().String()
-	isEvent     = send.Flag("event", "Is it event?").Default("false").Bool()
+	send              = app.Command("send", "Send a message to the service bus.").Default()
+	routingKey        = send.Arg("routing-key", "Routing key").Required().String()
+	requestBody       = send.Arg("request-body", "Request JSON body/JSON file").Required().String()
+	readyBodyFromFile = send.Flag("file", "Request request-body is a file").Default("false").Bool()
+	noStatusCode      = send.Flag("no-status", "Exclude status code from response.").Default("false").Bool()
+	isEvent           = send.Flag("event", "Is it event?").Default("false").Bool()
 )
 
 type ConsulPublicKey struct {
@@ -131,7 +133,19 @@ func sendMessage() {
 
 	rand.Seed(now.UnixNano())
 
-	payload := []byte(`{"body":` + *requestBody + `}`)
+	var payload []byte
+
+	if *readyBodyFromFile {
+		data, err := os.ReadFile(*requestBody)
+		if err != nil {
+			log.Panicf("File cannot be read. file=%s, error=%s", *requestBody, err)
+			os.Exit(1)
+		}
+		requestBodyStr := string(data)
+		payload = []byte(`{"body":` + requestBodyStr + `}`)
+	} else {
+		payload = []byte(`{"body":` + *requestBody + `}`)
+	}
 
 	corrId := randString(32)
 
@@ -186,7 +200,11 @@ func sendMessage() {
 				log.Panicf("Error parse response: %s", err)
 			}
 
-			fmt.Printf("\n%s\n\n%s\n\n", response["status"], jsonStr)
+			if *noStatusCode {
+				fmt.Printf("%s", jsonStr)
+			} else {
+				fmt.Printf("\n%s\n\n%s\n\n", response["status"], jsonStr)
+			}
 
 			d.Ack(false)
 
