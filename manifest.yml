@@ -1,0 +1,12 @@
+info:
+  name: sbus-cli
+  description: "Sbus Cli"
+  version: "1.1"
+  category: infra
+
+include:
+  - file: /etc/serve/include.d/library.yml
+
+build:
+  - sh: "make docker-dist VERSION={{ info.build-version }}"
+  - sh: 'curl -sSf -uci:${ART_CI_PASSWORD} -T bin/sbus-v{{ info.build-version }}-linux-amd64 "http://art.boople.co/artifactory/infra/sbus-cli/"'

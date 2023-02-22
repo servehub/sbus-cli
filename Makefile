@@ -3,6 +3,7 @@ DEST ?= ./bin
 SUFFIX?=""
 TARGET_OS=linux darwin
 TARGET_ARCH=amd64
+PACKAGE=github.com/copperexchange/sbus-cli
 
 export CGO_ENABLED=0
 
@@ -47,3 +48,6 @@ release: dist
 				--replace; \
 		done \
 	done \
+
+docker-dist:
+	docker run --rm -v "${PWD}":/go/src/${PACKAGE} -w /go/src/${PACKAGE} -e VERSION golang:1.19 /bin/sh -c 'go mod vendor && make dist'
