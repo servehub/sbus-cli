@@ -5,3 +5,4 @@ config.yml
 *.log
 /config/reference.go
 .vscode/
+sbus-cli

@@ -12,13 +12,17 @@ import (
 
 var (
 	awsDefaultRegion = "AWS_DEFAULT_REGION"
-	keySuffix        = "amq_url"
+)
+
+const (
+	AmqpKeySuffix  string = "amq_url"
+	KafkaKeySuffix string = "kafka_url"
 )
 
 /*
 Connect to AWS Secret Manager and return secret value. If --sm-key is provide it will return exact secret value, if not it will return secret with name contains env and ends with "amq_url"
 */
-func FetchDataFromAWSSM(smKey *string, env *string) (*string, error) {
+func FetchDataFromAWSSM(smKey *string, env *string, suffix string) (*string, error) {
 	region, ok := os.LookupEnv(awsDefaultRegion)
 	if ok == false {
 		return nil, fmt.Errorf("AWS_DEFAULT_REGION env variable must be provided")
@@ -46,7 +50,7 @@ func FetchDataFromAWSSM(smKey *string, env *string) (*string, error) {
 			}
 
 			for _, secret := range resultList.SecretList {
-				if strings.Contains(*secret.Name, *env) && strings.HasSuffix(*secret.Name, keySuffix) {
+				if strings.Contains(*secret.Name, *env) && strings.HasSuffix(*secret.Name, suffix) {
 					key = *secret.Name
 					count++
 				}

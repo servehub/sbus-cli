@@ -50,4 +50,4 @@ release: dist
 	done \
 
 docker-dist:
-	docker run --rm -v "${PWD}":/go/src/${PACKAGE} -w /go/src/${PACKAGE} -e VERSION golang:1.19 /bin/sh -c 'go mod vendor && make dist'
+	docker run --rm -v "${PWD}":/go/src/${PACKAGE} -w /go/src/${PACKAGE} -e VERSION -e GOINSECURE="*" -e GONOSUMDB="*" -e GOPRIVATE="*" golang:1.19 /bin/sh -c 'go mod vendor && make dist'

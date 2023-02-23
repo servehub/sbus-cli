@@ -10,14 +10,15 @@ import (
 )
 
 type EnvData struct {
-	Sbus_User        string
-	Sbus_Private_Key string
-	Sbus_Amqp_Url    string
+	SbusUser       string `mapstructure:"sbus_user"`
+	SbusPrivateKey string `mapstructure:"sbus_private_key"`
+	SbusAmqpUrl    string `mapstructure:"sbus_amqp_url"`
+	SbusKafkaUrl   string `mapstructure:"sbus_kafka_url"`
 }
 
 type AppConfig struct {
-	Env       map[string]EnvData
-	Sbus_User string
+	Env      map[string]EnvData `mapstructure:"env"`
+	SbusUser string             `mapstructure:"sbus_user"`
 }
 type EnvVariable int64
 
@@ -25,6 +26,7 @@ const (
 	EnvSbusUser EnvVariable = iota
 	EnvSbusPrivateKey
 	EnvSbusAmqpUrl
+	EnvKafkaUrl
 )
 
 /* Get value for environment from config file or from ENV variable if exist */
@@ -35,14 +37,16 @@ func (ac *AppConfig) GetValue(env *string, envVariable EnvVariable) (string, boo
 	switch envVariable {
 	case EnvSbusUser:
 		// if user for specific env don't exist try global user
-		configValue = ac.Env[envValue].Sbus_User
+		configValue = ac.Env[envValue].SbusUser
 		if configValue == "" {
-			configValue = ac.Sbus_User
+			configValue = ac.SbusUser
 		}
 	case EnvSbusPrivateKey:
-		configValue = ac.Env[envValue].Sbus_Private_Key
+		configValue = ac.Env[envValue].SbusPrivateKey
 	case EnvSbusAmqpUrl:
-		configValue = ac.Env[envValue].Sbus_Amqp_Url
+		configValue = ac.Env[envValue].SbusAmqpUrl
+	case EnvKafkaUrl:
+		configValue = ac.Env[envValue].SbusKafkaUrl
 	}
 
 	if configValue == "" {
@@ -58,7 +62,18 @@ func (ac *AppConfig) SetValueAmpqUrl(env *string, ampqUrl *string) {
 		ac.Env = make(map[string]EnvData)
 	}
 	envData := ac.Env[envValue]
-	envData = EnvData{Sbus_Amqp_Url: *ampqUrl, Sbus_User: envData.Sbus_User, Sbus_Private_Key: envData.Sbus_Private_Key}
+	envData = EnvData{SbusAmqpUrl: *ampqUrl, SbusUser: envData.SbusUser, SbusPrivateKey: envData.SbusPrivateKey, SbusKafkaUrl: envData.SbusKafkaUrl}
+	ac.Env[envValue] = envData
+}
+
+/* Sat Kafka url value for specific environment */
+func (ac *AppConfig) SetValueKafkaUrl(env *string, kafkaUrl *string) {
+	envValue := fixDashInEnvVariable(env)
+	if ac.Env == nil {
+		ac.Env = make(map[string]EnvData)
+	}
+	envData := ac.Env[envValue]
+	envData = EnvData{SbusAmqpUrl: envData.SbusAmqpUrl, SbusUser: envData.SbusUser, SbusPrivateKey: envData.SbusPrivateKey, SbusKafkaUrl: *kafkaUrl}
 	ac.Env[envValue] = envData
 }
 
@@ -90,7 +105,7 @@ func (ac *AppConfig) SaveConfiguration() {
 	if os.IsNotExist(err) {
 		err := os.Mkdir(fmt.Sprintf("%s/.sbus", usr.HomeDir), 0755)
 		if err != nil {
-			fmt.Println("For some reaseone I can't create folder for configuration. New configuraiton will not be created, please create manually %HOME/.sbus folder", err)
+			fmt.Println("For some reason I can't create folder for configuration. New configuraiton will not be created, please create manually %HOME/.sbus folder", err)
 		}
 	}
 
@@ -101,7 +116,7 @@ func (ac *AppConfig) SaveConfiguration() {
 			return
 		}
 	}
-	fmt.Println("New configration saved.")
+	fmt.Println("New configuration saved.")
 
 }
 
@@ -110,8 +125,10 @@ func loadConfig(targetEnv *string, overrideConfigWithEnv bool) (*AppConfig, erro
 	viper.SetConfigName("config")
 	viper.SetConfigType("yml")
 
-	viper.AutomaticEnv()
-	setEnvOverrides(targetEnv)
+	if overrideConfigWithEnv {
+		viper.AutomaticEnv()
+		setEnvOverrides(targetEnv)
+	}
 
 	_ = viper.ReadInConfig()
 
@@ -130,6 +147,10 @@ func setEnvOverrides(targetEnv *string) {
 
 		configKey = fmt.Sprintf("env.%s.sbus_amqp_url", envValue)
 		envKey := fmt.Sprintf("SBUS_AMQP_%s_URL", strings.ToUpper(envValue))
+		_ = viper.BindEnv(configKey, envKey)
+
+		configKey = fmt.Sprintf("env.%s.sbus_kafka_url", envValue)
+		envKey = fmt.Sprintf("SBUS_KAFKA_%s_URL", strings.ToUpper(envValue))
 		_ = viper.BindEnv(configKey, envKey)
 
 		configKey = fmt.Sprintf("env.%s.sbus_private_key", envValue)
