@@ -14,6 +14,7 @@ gocd:
 
 build:
   - sh: "make docker-dist VERSION={{ info.build-version }}"
-  - sh: 'curl -sSf -uci:${ART_CI_PASSWORD} -T bin/sbus-v{{ info.build-version }}-linux-amd64 "https://art.boople.co/artifactory/infra/sbus-cli/"'
-  - sh: 'curl -sSf -uci:${ART_CI_PASSWORD} -T bin/sbus-v{{ info.build-version }}-darwin-amd64 "https://art.boople.co/artifactory/infra/sbus-cli/"'
 
+deploy:
+  - artifact: bin/sbus-v{{ info.build-version }}-linux-amd64
+  - artifact: bin/sbus-v{{ info.build-version }}-darwin-amd64
